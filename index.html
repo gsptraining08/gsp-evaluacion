@@ -262,6 +262,7 @@ input[readonly]{opacity:.55;cursor:default}
         <div class="field"><label>Contacto</label><input id="f-contacto" placeholder="Celular"></div>
         <div class="field"><label>Deporte</label><input id="f-deporte" placeholder="Fútbol"></div>
         <div class="field"><label>Condiciones médicas</label><input id="f-condiciones" placeholder="Ninguna / Osgood Schlatter..."></div>
+        <div class="field"><label>Evaluador</label><input id="f-evaluador" placeholder="Nombre del evaluador"></div>
       </div>
     </div>
     <div class="actions"><button class="btn btn-primary" onclick="goTo(1)">Siguiente →</button></div>
@@ -423,7 +424,7 @@ input[readonly]{opacity:.55;cursor:default}
     </div>
     <div style="text-align:right">
       <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Evaluador</div>
-      <div style="font-weight:700;margin-top:3px">Santiago Andrés González Gil</div>
+      <div style="font-weight:700;margin-top:3px" id="r-evaluador">—</div>
       <div style="font-size:12px;color:#555">GSP Centro de Desarrollo Atlético S.A.S.</div>
     </div>
   </div>
@@ -682,6 +683,7 @@ function startNewEval(aId) {
     setVal('f-nombre', a.name); setVal('f-edad', a.age);
     setVal('f-contacto', a.contact); setVal('f-deporte', a.sport);
     setVal('f-condiciones', a.conditions);
+    setVal('f-evaluador', a.lastEvaluador || '');
     document.getElementById('form-title').textContent = 'Nueva Evaluación — ' + a.name;
   } else {
     document.getElementById('form-title').textContent = 'Nueva Evaluación';
@@ -704,15 +706,15 @@ function resetForm() {
     'fms-s','fms-h-i','fms-h-d','fms-p-i','fms-p-d','fms-v-i','fms-v-d','fms-z-i','fms-z-d','fms-t','fms-b-i','fms-b-d',
     'fms-s-obs','fms-h-obs','fms-p-obs','fms-v-obs','fms-z-obs','fms-t-obs','fms-b-obs',
     'f-s10','f-s10n','f-505','f-505n','f-sj','f-cmj','f-ab','f-djtc','f-djtv','f-rsi',
-    'f-fce','f-fc1','f-fc2','f-fc3','f-notas'];
+    'f-fce','f-fc1','f-fc2','f-fc3','f-notas','f-evaluador'];
   ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   document.getElementById('sq-rows').innerHTML = '';
   document.getElementById('pb-rows').innerHTML = '';
   document.getElementById('extra-exercises').innerHTML = '';
   exCount = 0;
-  [[20,1.48],[30,1.45],[40,1.14],[50,1.10],[60,0.94]].forEach(([l,v]) => addRow('sq',l,v));
-  [[20,1.54],[30,1.20],[40,0.96]].forEach(([l,v]) => addRow('pb',l,v));
+  [20,30,40,50,60].forEach(l => addRow('sq',l,''));
+  [20,30,40].forEach(l => addRow('pb',l,''));
 }
 
 function goTo(step) {
@@ -796,7 +798,7 @@ function collectForm() {
   return {
     nombre: gv('f-nombre') || 'Atleta',
     fecha: gv('f-fecha'), edad: gv('f-edad'), contacto: gv('f-contacto'),
-    deporte: gv('f-deporte'), condiciones: gv('f-condiciones'),
+    deporte: gv('f-deporte'), condiciones: gv('f-condiciones'), evaluador: gv('f-evaluador'),
     peso: gn('f-peso'), talla: gn('f-talla'), fc: gv('f-fc'),
     pct_musculo: gn('f-musculo'), pct_grasa: gn('f-grasa'), imc: gn('f-imc'),
     fms: {
@@ -846,7 +848,7 @@ async function generateAndSave() {
   const evalRec = { ...d, timestamp: new Date().toISOString(), _analysis: analysis };
 
   let athlete = athletes[aid] || { id:aid, name:d.nombre, sport:d.deporte, age:d.edad, contact:d.contacto, conditions:d.condiciones, evaluations:[] };
-  athlete.name = d.nombre; athlete.sport = d.deporte; athlete.age = d.edad; athlete.contact = d.contacto;
+  athlete.name = d.nombre; athlete.sport = d.deporte; athlete.age = d.edad; athlete.contact = d.contacto; if(d.evaluador) athlete.lastEvaluador = d.evaluador;
   athlete.evaluations.push(evalRec);
   currentAthleteId = aid;
 
@@ -1047,8 +1049,8 @@ document.getElementById('f-fecha').valueAsDate = new Date();
   const p=parseFloat(document.getElementById('f-peso').value), t=parseFloat(document.getElementById('f-talla').value)/100;
   if(p&&t) document.getElementById('f-imc').value=(p/(t*t)).toFixed(1);
 }));
-[[20,1.48],[30,1.45],[40,1.14],[50,1.10],[60,0.94]].forEach(([l,v])=>addRow('sq',l,v));
-[[20,1.54],[30,1.20],[40,0.96]].forEach(([l,v])=>addRow('pb',l,v));
+[20,30,40,50,60].forEach(l=>addRow('sq',l,''));
+[20,30,40].forEach(l=>addRow('pb',l,''));
 initLogin();
 initDrive();
 </script>

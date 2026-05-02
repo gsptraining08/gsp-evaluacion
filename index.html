@@ -225,7 +225,10 @@ input[readonly]{opacity:.55;cursor:default}
       <div class="page-title" id="profile-name">—</div>
       <div class="page-sub" id="profile-meta">—</div>
     </div>
-    <button class="btn btn-primary" onclick="startNewEval(currentAthleteId)">+ Nueva Evaluación</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="startNewEval(currentAthleteId)">+ Nueva Evaluación</button>
+      <button class="btn btn-sm" onclick="confirmDeleteAthlete(currentAthleteId)" style="background:transparent;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.5px" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">🗑 Eliminar Atleta</button>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">Historial de Evaluaciones</div>
@@ -652,7 +655,7 @@ function openProfile(id) {
       const d = new Date(ev.fecha).toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
       const kpis = [ev.peso ? ev.peso+'kg' : null, ev.sprint10 ? '10m: '+ev.sprint10+'s' : null, ev.cmj ? 'CMJ: '+ev.cmj+'cm' : null].filter(Boolean).join(' · ');
       const canCompare = realIdx > 0;
-      return `<div class="eval-item">
+      return `<div class="eval-item" id="eval-item-${realIdx}">
         <div>
           <div class="eval-item-date">${d}</div>
           <div class="eval-item-meta">${kpis || 'Evaluación registrada'}</div>
@@ -660,6 +663,7 @@ function openProfile(id) {
         <div class="eval-item-actions">
           ${canCompare ? `<button class="btn btn-secondary btn-sm" onclick="compareEvals('${id}',${realIdx-1},${realIdx})">📊 Comparar</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="viewEval('${id}',${realIdx})">Ver informe</button>
+          <button class="btn btn-sm" onclick="confirmDeleteEval('${id}',${realIdx})" style="background:transparent;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.5px" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">🗑 Borrar</button>
         </div>
       </div>`;
     }).join('');
@@ -1017,6 +1021,70 @@ function showLoader(t='') { setTxt('l-text',t); document.getElementById('loading
 function updateLoader(s) { setTxt('l-sub',s); }
 function hideLoader() { document.getElementById('loading').classList.remove('show'); document.getElementById('l-sub').textContent=''; }
 function toast(msg, color) { const t=document.getElementById('toast'); t.textContent=msg; t.style.background=color||'var(--green)'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+
+// ═══════════════ ELIMINAR ═══════════════
+function showModal(icon, title, body, onConfirm) {
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  document.getElementById('modal-confirm-btn').onclick = () => { closeModal(); onConfirm(); };
+  document.getElementById('confirm-modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('confirm-modal').style.display = 'none';
+}
+
+function confirmDeleteEval(athleteId, evalIdx) {
+  const a = athletes[athleteId];
+  const ev = a.evaluations[evalIdx];
+  const d = ev.fecha ? new Date(ev.fecha).toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'}) : 'esta evaluación';
+  showModal(
+    '🗑️',
+    'Eliminar Evaluación',
+    `¿Eliminar la evaluación del ${d} de ${a.name}? Esta acción no se puede deshacer.`,
+    () => deleteEval(athleteId, evalIdx)
+  );
+}
+
+async function deleteEval(athleteId, evalIdx) {
+  const a = athletes[athleteId];
+  a.evaluations.splice(evalIdx, 1);
+  await saveAthleteToDrive(a);
+  toast('✓ Evaluación eliminada');
+  openProfile(athleteId);
+}
+
+function confirmDeleteAthlete(athleteId) {
+  const a = athletes[athleteId];
+  const count = (a.evaluations||[]).length;
+  showModal(
+    '⚠️',
+    'Eliminar Atleta',
+    `¿Eliminar a ${a.name} y todas sus ${count} evaluacion${count!==1?'es':''}? Esta acción no se puede deshacer.`,
+    () => deleteAthlete(athleteId)
+  );
+}
+
+async function deleteAthlete(athleteId) {
+  delete athletes[athleteId];
+  localStorage.setItem('gsp_athletes', JSON.stringify(athletes));
+  if (driveReady) {
+    setSyncStatus('syncing', 'Eliminando...');
+    try {
+      const fname = PREFIX + athleteId + '.json';
+      await callClaude(
+        'You manage Google Drive files. Respond ONLY with {"ok":true}.',
+        `Delete the file named "${fname}" from Google Drive folder "${FOLDER}". If it doesn't exist, return {"ok":true} anyway.`,
+        true
+      );
+      setSyncStatus('ok', 'Eliminado de Drive ✓');
+    } catch(e) { setSyncStatus('err', 'Error al eliminar de Drive'); }
+  }
+  toast('✓ Atleta eliminado');
+  goView('view-athletes');
+  renderGrid();
+}
 
 // ═══════════════ ACCESO ═══════════════
 function checkAccess() {

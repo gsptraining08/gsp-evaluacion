@@ -1043,14 +1043,14 @@ function closeModal() {
 
 function confirmDeleteEval(athleteId, evalIdx) {
   const a = athletes[athleteId];
+  if (!a) { alert('Atleta no encontrado'); return; }
   const ev = a.evaluations[evalIdx];
+  if (!ev) { alert('Evaluación no encontrada'); return; }
   const d = ev.fecha ? new Date(ev.fecha).toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'}) : 'esta evaluación';
-  showModal(
-    '🗑️',
-    'Eliminar Evaluación',
-    `¿Eliminar la evaluación del ${d} de ${a.name}? Esta acción no se puede deshacer.`,
-    () => deleteEval(athleteId, evalIdx)
-  );
+  const nombre = a.name || 'este atleta';
+  if (confirm('¿Eliminar la evaluación del ' + d + ' de ' + nombre + '? Esta acción no se puede deshacer.')) {
+    deleteEval(athleteId, evalIdx);
+  }
 }
 
 async function deleteEval(athleteId, evalIdx) {
@@ -1063,13 +1063,12 @@ async function deleteEval(athleteId, evalIdx) {
 
 function confirmDeleteAthlete(athleteId) {
   const a = athletes[athleteId];
-  const count = (a.evaluations||[]).length;
-  showModal(
-    '⚠️',
-    'Eliminar Atleta',
-    `¿Eliminar a ${a.name} y todas sus ${count} evaluacion${count!==1?'es':''}? Esta acción no se puede deshacer.`,
-    () => deleteAthlete(athleteId)
-  );
+  if (!a) { alert('Atleta no encontrado'); return; }
+  const nombre = a.name || 'este atleta';
+  const count = (a.evaluations || []).length;
+  if (confirm('¿Eliminar a ' + nombre + ' y todas sus ' + count + ' evaluaciones? Esta acción no se puede deshacer.')) {
+    deleteAthlete(athleteId);
+  }
 }
 
 async function deleteAthlete(athleteId) {

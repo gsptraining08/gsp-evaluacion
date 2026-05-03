@@ -663,7 +663,13 @@ function openProfile(id) {
         <div class="eval-item-actions">
           ${canCompare ? `<button class="btn btn-secondary btn-sm" onclick="compareEvals('${id}',${realIdx-1},${realIdx})">📊 Comparar</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="viewEval('${id}',${realIdx})">Ver informe</button>
-          <button class="btn btn-sm" onclick="confirmDeleteEval('${id}',${realIdx})" style="background:transparent;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.5px" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">🗑 Borrar</button>
+          <button class="btn btn-sm"
+            data-athlete-id="${id}"
+            data-eval-idx="${realIdx}"
+            onclick="confirmDeleteEval(this.dataset.athleteId, parseInt(this.dataset.evalIdx))"
+            style="background:transparent;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.5px"
+            onmouseover="this.style.background='#fef2f2'"
+            onmouseout="this.style.background='transparent'">🗑 Borrar</button>
         </div>
       </div>`;
     }).join('');
